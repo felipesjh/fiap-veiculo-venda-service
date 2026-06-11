@@ -1,0 +1,41 @@
+{
+  "name": "fiap-veiculo-venda-service",
+  "version": "1.0.0",
+  "description": "Serviço de listagem e vendas de veículos com MongoDB (Fase 4 Tech Challenge - SOAT)",
+  "main": "dist/infrastructure/web/ExpressApp.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/infrastructure/web/ExpressApp.js",
+    "dev": "ts-node src/infrastructure/web/ExpressApp.ts",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand"
+  },
+  "keywords": [
+    "nodejs",
+    "microservices",
+    "ddd",
+    "hexagonal",
+    "mongodb"
+  ],
+  "author": "Felipe",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongodb": "^6.6.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.12.12",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

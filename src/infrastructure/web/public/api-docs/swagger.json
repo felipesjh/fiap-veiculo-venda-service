@@ -1,0 +1,123 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Serviço de Vendas de Veículos - API Docs",
+    "description": "Documentação Swagger do Serviço de Vendas e Webhooks (FIAP Tech Challenge - SOAT)",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3002",
+      "description": "Servidor Local"
+    }
+  ],
+  "paths": {
+    "/api/vehicles/available": {
+      "get": {
+        "summary": "Lista veículos à venda no MongoDB",
+        "description": "Retorna uma lista ordenada por preço: **do mais barato para o mais caro**.",
+        "responses": {
+          "200": {
+            "description": "Lista de veículos disponíveis"
+          }
+        }
+      }
+    },
+    "/api/vehicles/sold": {
+      "get": {
+        "summary": "Lista veículos vendidos no MongoDB",
+        "description": "Retorna uma lista de veículos vendidos, ordenada por preço crescente.",
+        "responses": {
+          "200": {
+            "description": "Lista de veículos vendidos"
+          }
+        }
+      }
+    },
+    "/api/sales": {
+      "post": {
+        "summary": "Gera um pedido de venda de veículo",
+        "description": "Cria um registro de transação com status **PENDENTE** e retorna o código de pagamento.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["vehicleId", "cpf", "saleDate"],
+                "properties": {
+                  "vehicleId": { "type": "string", "example": "v1" },
+                  "cpf": { "type": "string", "example": "123.456.789-09" },
+                  "saleDate": { "type": "string", "example": "2026-05-30" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Intenção de venda gerada com sucesso"
+          },
+          "400": {
+            "description": "Veículo indisponível ou dados corrompidos"
+          },
+          "401": {
+            "description": "Chave de API inválida ou ausente"
+          }
+        }
+      }
+    },
+    "/api/webhook/payment": {
+      "post": {
+        "summary": "Webhook de Atualização de Pagamento",
+        "description": "Endpoint chamado pela entidade integradora de pagamentos para atualizar o status da venda.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["paymentCode", "status"],
+                "properties": {
+                  "paymentCode": { "type": "string", "example": "PAY-A1B2C3D4" },
+                  "status": { "type": "string", "enum": ["efetuado", "cancelado"], "example": "efetuado" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processado com sucesso"
+          },
+          "400": {
+            "description": "Parâmetros incorretos ou código inexistente"
+          },
+          "401": {
+            "description": "Chave de API inválida ou ausente"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-KEY",
+        "description": "Cole a chave secreta: 'fiap-secret-key'"
+      }
+    }
+  }
+}

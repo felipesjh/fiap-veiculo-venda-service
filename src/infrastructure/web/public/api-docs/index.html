@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Swagger UI - Sales Service Docs</title>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/favicon-32x32.png" sizes="32x32" />
+  <style>
+    html { box-sizing: border-box; overflow: -y-scroll; }
+    *, *:before, *:after { box-sizing: inherit; }
+    body { margin:0; background: #fafafa; font-family: sans-serif; }
+    .header {
+      background-color: #1b1b1b;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+    .header h2 { margin: 0; font-size: 1.25rem; }
+    .header a { color: #62a8ea; text-decoration: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>📄 FIAP Tech Challenge SOAT - Serviço de Vendas e Webhooks Docs</h2>
+  </div>
+  <div id="swagger-ui"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js" charset="UTF-8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
+  <script>
+    window.onload = function() {
+      const ui = SwaggerUIBundle({
+        url: "./swagger.json",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "BaseLayout"
+      });
+      window.ui = ui;
+    };
+  </script>
+</body>
+</html>

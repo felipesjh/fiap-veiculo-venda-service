@@ -1,0 +1,41 @@
+name: CI/CD Pipeline - Sales Service
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    name: Build, Lint and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: 'package-lock.json'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Build TypeScript Code
+      run: npm run build
+
+    - name: Run Unit & Integration Tests
+      run: npm run test:coverage
+
+    # Validação do Dockerfile: Constrói a imagem localmente para garantir que não há erros de empacotamento
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Verify Docker Build (Smoke Test)
+      run: |
+        docker build -t fiap-veiculo-venda-service:test .
+        echo "Dockerfile verificado e compilado com sucesso localmente na pipeline!"
