@@ -1,76 +1,76 @@
-# Serviço de Venda de Veículos (`veiculo-venda-service`)
+# Servico de Venda de Veiculos - veiculo-venda-service
 
-Este repositório contém o microsserviço responsável pelas funcionalidades de **Vendas, Listagem de Veículos e Processamento de Webhook de Pagamento** do ecossistema de revenda. Ele implementa as listagens rápidas e ordenadas por preço, e o histórico de transações utilizando o banco de dados NoSQL **MongoDB**.
-
----
-
-## 🛠️ Arquitetura e Padrões de Design
-
-A aplicação segue rigorosamente os conceitos de **DDD (Domain-Driven Design)** e **Arquitetura Hexagonal (Ports and Adapters)**:
-
-- **Domínio (`src/domain`)**:
-  - **Entidades / Agregados**: `Sale.ts` representando a venda e seu ciclo de vida transacional. `Vehicle.ts` atuando como a entidade read-model local sincronizada por chamadas externas.
-  - **Value Objects**: `CPF.ts` encapsulando validações matemáticas complexas do dígito verificador do CPF brasileiro, impossibilitando CPFs fictícios ou estruturalmente corrompidos na base de vendas.
-  - **Ports (Portas)**: `ISaleRepository` (persistence port) e `IVehicleRepository` (read/write sync port).
-- **Aplicação (`src/application`)**:
-  - **Use Cases**: 
-    - `CreateSale.ts`: Efetua a intenção de compra, criando um pedido com status `PENDENTE`.
-    - `ProcessWebhook.ts`: Recebe chamadas externas confirmando ou cancelando o pagamento e reverte/confirma o estado do veículo e da venda.
-    - `ListAvailableVehicles.ts` & `ListSoldVehicles.ts`: Buscas rápidas ordenadas por preço crescente.
-- **Infraestrutura (`src/infrastructure`)**:
-  - **Database Adapters**: `MongoSaleRepository.ts` e `MongoVehicleRepository.ts` utilizando o driver nativo `mongodb`, criando índices para ordenações rápidas e performáticas.
-  - **Web Adapter**: Servidor Express que gerencia as rotas públicas, endpoints internos de sincronização e o **Webhook `/api/webhook/payment`**.
+Este repositorio contem o microsservico responsavel pelas operacoes de vendas, listagem de veiculos disponiveis e processamento de webhook de confirmacao de pagamento. A aplicacao utiliza o banco de dados MongoDB para persistencia e indexacao de dados de vendas.
 
 ---
 
-## 🧪 TDD & Testes Automatizados
+## Arquitetura e Estrutura do Codigo
 
-Seguindo as práticas de **TDD (Test-Driven Development)**, todo o domínio e os casos de uso foram exaustivamente testados isoladamente. Os testes usam Mocks em memória (`InMemorySaleRepository` e `InMemoryVehicleRepository`), o que garante a velocidade de execução (milissegundos) sem necessitar de uma base MongoDB local rodando.
+O projeto segue a divisao da Arquitetura Hexagonal e DDD:
 
-### Como rodar os testes localmente:
-1. Instale as dependências:
-   ```bash
-   npm install
-   ```
-2. Execute todos os testes e veja a cobertura (meta de >80% amplamente superada, atingindo **100% de cobertura de domínio e use cases**):
-   ```bash
-   npm run test:coverage
-   ```
+- Dominio (src/domain):
+  - Entidades e Agregados (Sale.ts e Vehicle.ts) controlando as validacoes de estado de compra e integracao de leitura.
+  - Value Object (CPF.ts) que implementa a validacao matematica do digito verificador de CPFs.
+  - Portas (ISaleRepository e IVehicleRepository).
+- Aplicacao (src/application):
+  - Casos de uso (CreateSale.ts, ProcessWebhook.ts, ListAvailableVehicles.ts e ListSoldVehicles.ts).
+- Infraestrutura (src/infrastructure):
+  - Adaptadores MongoDB (MongoSaleRepository.ts e MongoVehicleRepository.ts).
+  - Rotas e Controladores Express (SalesController.ts e ExpressApp.ts) incluindo a escuta de Webhook.
+  - Documentacao automatizada via Swagger UI.
 
 ---
 
-## 🔌 Endpoint de Webhook de Pagamento
+## Webhook de Pagamento
 
-O microsserviço disponibiliza um webhook público de escuta no endpoint:
-- **`POST /api/webhook/payment`**
+O endpoint publico para recebimento de notificacoes da integradora de pagamento e:
+- POST /api/webhook/payment
 
-### Payload Esperado:
+### Payload esperado:
 ```json
 {
   "paymentCode": "PAY-XXXXXX",
-  "status": "efetuado" // ou "cancelado"
+  "status": "efetuado"
 }
 ```
 
-### Regras de Negócio do Webhook:
-1. Se status for `efetuado`: a venda é marcada como `CONFIRMADO`, o veículo correspondente é alterado localmente para `VENDIDO`, e uma requisição HTTP de sincronização é disparada de volta ao Serviço de Administração (`veiculo-admin-service`) para atualizar o status do veículo para `VENDIDO` também na base de dados MySQL principal.
-2. Se status for `cancelado`: a venda é marcada como `CANCELADO` e o veículo retorna para o estado `A_VENDA` para que outros compradores possam adquiri-lo.
+### Comportamento do Webhook:
+- Se o status for "efetuado", a venda e confirmada no MongoDB e o servico dispara uma requisicao HTTP sincrona para o servico de administracao atualizar o status do veiculo para "VENDIDO" no MySQL.
+- Se o status for "cancelado", a venda e cancelada e o veiculo volta a ficar disponivel para novos compradores.
 
 ---
 
-## 🚀 Como Rodar Localmente (Independente)
+## Execucao dos Testes Automatizados
 
-Se quiser rodar este serviço de forma isolada (fora do Docker Compose global):
+O projeto contem testes unitarios e de integracao que validam o comportamento das regras de negocio usando repositorios em memoria.
 
-1. Certifique-se de ter um banco MongoDB rodando.
-2. Crie um arquivo `.env` na pasta raiz do serviço com as configurações:
+### Instrucoes para rodar:
+1. Instale as dependencias:
+   ```bash
+   npm install
+   ```
+2. Execute os testes com geracao de relatorio de cobertura:
+   ```bash
+   npm run test:coverage
+   ```
+A suite atinge mais de 90% de cobertura de linhas nos componentes principais do microsservico.
+
+---
+
+## Como Executar de Forma Isolada
+
+Caso queira rodar este servico de forma independente (sem o Docker Compose do repositorio principal):
+
+1. Configure um banco MongoDB local.
+2. Crie o arquivo .env na raiz desta pasta com as variaveis:
    ```env
    PORT=3002
    MONGO_URI=mongodb://localhost:27017/sales_db
    ADMIN_SERVICE_URL=http://localhost:3001
    ```
-3. Execute as dependências e inicie em modo dev:
+3. Instale e inicie o projeto em modo dev:
    ```bash
    npm install
    npm run dev
    ```
+   *A documentacao da API estara acessivel em http://localhost:3002/api-docs*
