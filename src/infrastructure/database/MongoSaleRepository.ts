@@ -61,6 +61,27 @@ export class MongoSaleRepository implements ISaleRepository {
     });
   }
 
+  public async findById(id: string): Promise<Sale | null> {
+    try {
+      const doc = await this.collection.findOne({ _id: new ObjectId(id) });
+      if (!doc) return null;
+
+      return Sale.create({
+        id: doc._id.toString(),
+        vehicleId: doc.vehicleId,
+        vehicleBrand: doc.vehicleBrand,
+        vehicleModel: doc.vehicleModel,
+        vehiclePrice: doc.vehiclePrice,
+        cpf: doc.cpf,
+        saleDate: doc.saleDate,
+        paymentCode: doc.paymentCode,
+        status: doc.status
+      });
+    } catch {
+      return null;
+    }
+  }
+
   public async findAll(): Promise<Sale[]> {
     const docs = await this.collection.find().toArray();
     return docs.map(doc =>

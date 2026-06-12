@@ -35,6 +35,15 @@
       }
     },
     "/api/sales": {
+      "get": {
+        "summary": "Lista todas as vendas realizadas",
+        "description": "Retorna um histórico de todos os pedidos de venda gerados e salvos no MongoDB.",
+        "responses": {
+          "200": {
+            "description": "Lista de vendas"
+          }
+        }
+      },
       "post": {
         "summary": "Gera um pedido de venda de veículo",
         "description": "Cria um registro de transação com status **PENDENTE** e retorna o código de pagamento.",

@@ -4,7 +4,7 @@ import { IVehicleRepository } from '../../domain/ports/IVehicleRepository';
 
 export interface ProcessWebhookDTO {
   paymentCode: string;
-  status: 'efetuado' | 'cancelado';
+  status: string;
 }
 
 export class ProcessWebhook {
@@ -18,9 +18,16 @@ export class ProcessWebhook {
   }
 
   public async execute(dto: ProcessWebhookDTO): Promise<any> {
-    const sale = await this.saleRepository.findByPaymentCode(dto.paymentCode);
+    // 1. Tentar buscar pelo código de pagamento (ex: PAY-XYZ)
+    let sale = await this.saleRepository.findByPaymentCode(dto.paymentCode);
+
+    // 2. Se não encontrar, tentar buscar pelo ID da venda (caso o usuário tenha confundido id com paymentCode)
     if (!sale) {
-      throw new Error('Venda não encontrada para este código de pagamento');
+      sale = await this.saleRepository.findById(dto.paymentCode);
+    }
+
+    if (!sale) {
+      throw new Error('Venda não encontrada para o código ou ID fornecido');
     }
 
     const vehicle = await this.vehicleRepository.findById(sale.getVehicleId());
@@ -28,7 +35,11 @@ export class ProcessWebhook {
       throw new Error('Veículo correspondente à venda não encontrado');
     }
 
-    if (dto.status === 'efetuado') {
+    const statusClean = (dto.status || '').trim().toLowerCase();
+    const isSuccess = ['efetuado', 'aprovado', 'pago', 'confirmado', 'vendido', 'success'].includes(statusClean);
+    const isCancelled = ['cancelado', 'rejeitado', 'falhou', 'recusado', 'error'].includes(statusClean);
+
+    if (isSuccess) {
       sale.confirmPayment();
       vehicle.markAsSold();
 
@@ -44,14 +55,14 @@ export class ProcessWebhook {
         // Não jogamos erro aqui para não invalidar a venda confirmada do cliente,
         // mas marcamos a necessidade de reconciliação.
       }
-    } else if (dto.status === 'cancelado') {
+    } else if (isCancelled) {
       sale.cancelPayment();
       vehicle.markAsAvailable();
 
       await this.saleRepository.save(sale);
       await this.vehicleRepository.save(vehicle);
     } else {
-      throw new Error('Status de pagamento inválido. Use "efetuado" ou "cancelado".');
+      throw new Error('Status de pagamento inválido. Use "efetuado" ou "cancelado" (ou sinônimos).');
     }
 
     return sale.toJSON();

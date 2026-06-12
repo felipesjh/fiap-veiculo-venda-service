@@ -20,6 +20,10 @@ export class InMemorySaleRepository implements ISaleRepository {
     return null;
   }
 
+  public async findById(id: string): Promise<Sale | null> {
+    return this.sales.get(id) || null;
+  }
+
   public async findAll(): Promise<Sale[]> {
     return Array.from(this.sales.values());
   }
